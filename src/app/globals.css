@@ -33,7 +33,7 @@
   .dark {
     --background: 225 10% 8%;
     --foreground: 0 0% 98%;
-    --card: 225 10% 12%;
+    --card: 225 10% 100% / 0.05;
     --card-foreground: 0 0% 98%;
     --popover: 225 10% 8%;
     --popover-foreground: 0 0% 98%;
@@ -48,7 +48,7 @@
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
     --border: 225 10% 30%;
-    --input: 225 10% 30%;
+    --input: 225 10% 100% / 0.1;
     --ring: 255 47% 64%;
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
@@ -90,6 +90,10 @@
       0 0 5px hsl(var(--primary)),
       0 0 10px hsl(var(--primary)),
       0 0 15px hsl(var(--primary));
+  }
+  
+  .glass-morphism {
+    @apply bg-card backdrop-blur-xl border border-white/10;
   }
 }
 
