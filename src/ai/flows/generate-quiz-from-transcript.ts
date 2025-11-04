@@ -10,7 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import {defineModel, geminiPro, gemini15Flash} from '@genkit-ai/google-genai';
+import { geminiPro } from '@genkit-ai/google-genai';
 
 
 const GenerateQuizFromTranscriptInputSchema = z.object({
@@ -34,21 +34,6 @@ export async function generateQuizFromTranscript(
 ): Promise<GenerateQuizFromTranscriptOutput> {
   return generateQuizFromTranscriptFlow(input);
 }
-
-const gemini25Flash = defineModel(
-    {
-        name: 'googleai/gemini-2.5-flash',
-        config: {
-            temperature: 0.5,
-        }
-    },
-    async (input) => {
-        // This is a placeholder for any custom logic you might want to add.
-        // For now, it just passes through to the gemini15Flash model.
-        return gemini15Flash(input);
-    }
-)
-
 
 const prompt = ai.definePrompt({
   name: 'generateQuizFromTranscriptPrompt',
@@ -80,15 +65,18 @@ const generateQuizFromTranscriptFlow = ai.defineFlow(
 
     try {
         const {output} = await ai.generate({
-            model: 'googleai/gemini-2.5-flash',
+            model: 'googleai/gemini-1.5-flash',
             prompt: quizPrompt,
             output: {
                 schema: GenerateQuizFromTranscriptOutputSchema,
+            },
+            config: {
+              temperature: 0.5
             }
         });
         return output!;
     } catch(e) {
-        console.warn('Primary model (gemini-2.5-flash) failed, trying failsafe model (gemini-pro)...', e);
+        console.warn('Primary model (gemini-1.5-flash) failed, trying failsafe model (gemini-pro)...', e);
         const {output} = await ai.generate({
             model: geminiPro,
             prompt: quizPrompt,

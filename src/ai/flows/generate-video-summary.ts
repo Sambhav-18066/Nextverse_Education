@@ -14,7 +14,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import {defineModel, geminiPro, gemini15Flash} from '@genkit-ai/google-genai';
+import { geminiPro } from '@genkit-ai/google-genai';
 
 const GenerateVideoSummaryInputSchema = z.object({
   transcript: z
@@ -42,19 +42,6 @@ export async function generateVideoSummary(
   return generateVideoSummaryFlow(input);
 }
 
-const gemini25Flash = defineModel(
-    {
-        name: 'googleai/gemini-2.5-flash',
-        config: {
-            temperature: 0.5,
-        }
-    },
-    async (input) => {
-        // This is a placeholder for any custom logic you might want to add.
-        // For now, it just passes through to the gemini15Flash model.
-        return gemini15Flash(input);
-    }
-)
 
 const generateVideoSummaryPrompt = ai.definePrompt({
   name: 'generateVideoSummaryPrompt',
@@ -76,25 +63,28 @@ const generateVideoSummaryFlow = ai.defineFlow(
     try {
       // First attempt with the primary model
       const {output} = await ai.generate({
-        model: 'googleai/gemini-2.5-flash',
+        model: 'googleai/gemini-1.5-flash',
         prompt: `Generate a detailed and comprehensive summary of the following YouTube video transcript. Make sure to highlight any particularly important points or "serious notes" that are critical for understanding the topic.
 
 Transcript:
-{{{transcript}}}`,
+${input.transcript}`,
         output: {
           schema: GenerateVideoSummaryOutputSchema,
+        },
+        config: {
+          temperature: 0.5,
         }
       });
       return output!;
     } catch (error) {
-      console.warn('Primary model (gemini-2.5-flash) failed, trying failsafe model (gemini-pro)...', error);
+      console.warn('Primary model (gemini-1.5-flash) failed, trying failsafe model (gemini-pro)...', error);
       // Failsafe: attempt with the secondary model
       const {output} = await ai.generate({
           model: geminiPro,
           prompt: `Generate a detailed and comprehensive summary of the following YouTube video transcript. Make sure to highlight any particularly important points or "serious notes" that are critical for understanding the topic.
 
 Transcript:
-{{{transcript}}}`,
+${input.transcript}`,
           output: {
               schema: GenerateVideoSummaryOutputSchema,
           }
