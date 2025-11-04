@@ -4,15 +4,26 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Rocket } from "lucide-react";
+import { useUser, useAuth } from "@/firebase";
+import { signOut } from "firebase/auth";
+import { useRouter } from "next/navigation";
 
 export function Header() {
   const pathname = usePathname();
+  const { user, isUserLoading } = useUser();
+  const auth = useAuth();
+  const router = useRouter();
 
-  const isAuthPage = pathname === "/login" || pathname === "/signup";
+  const isAuthPage = pathname === "/login" || pathname === "/signup" || pathname === "/verify-email";
   const isLandingPage = pathname === "/";
 
-  if (isAuthPage) {
-    return null; // Don't show header on auth pages for a cleaner look
+  const handleLogout = async () => {
+    await signOut(auth);
+    router.push('/');
+  };
+
+  if (isAuthPage && !isUserLoading && !user) {
+    return null; // Don't show header on auth pages for a cleaner look if logged out
   }
 
   return (
@@ -23,7 +34,7 @@ export function Header() {
           <span className="font-bold inline-block">NextVerse</span>
         </Link>
         <nav className="flex items-center gap-6 text-sm">
-          {isLandingPage ? (
+          {(!user && !isUserLoading) || isLandingPage ? (
             <Link
               href="/dashboard"
               className="transition-colors hover:text-foreground/80 text-foreground/60"
@@ -40,13 +51,13 @@ export function Header() {
           )}
         </nav>
         <div className="flex flex-1 items-center justify-end space-x-4">
-          {isLandingPage ? (
+          {isUserLoading ? (
+            <div className="h-8 w-20 animate-pulse rounded-md bg-muted" />
+          ) : user ? (
+             <Button variant="outline" onClick={handleLogout}>Logout</Button>
+          ) : (
              <Link href="/login">
                 <Button>Get Started</Button>
-            </Link>
-          ) : (
-            <Link href="/">
-                <Button variant="outline">Logout</Button>
             </Link>
           )}
         </div>
