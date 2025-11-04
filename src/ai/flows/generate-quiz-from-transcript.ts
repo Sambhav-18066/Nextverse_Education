@@ -64,7 +64,7 @@ const generateQuizFromTranscriptFlow = ai.defineFlow(
 
     try {
         const {output} = await ai.generate({
-            model: 'googleai/gemini-1.5-flash',
+            model: 'googleai/gemini-2.5-flash',
             prompt: quizPrompt,
             output: {
                 schema: GenerateQuizFromTranscriptOutputSchema,
@@ -75,7 +75,7 @@ const generateQuizFromTranscriptFlow = ai.defineFlow(
         });
         return output!;
     } catch(e) {
-        console.warn('Primary model (gemini-1.5-flash) failed, trying failsafe model (gemini-1.5-pro)...', e);
+        console.warn('Primary model (gemini-2.5-flash) failed, trying failsafe model (gemini-1.5-pro)...', e);
         const {output} = await ai.generate({
             model: 'googleai/gemini-1.5-pro',
             prompt: quizPrompt,
