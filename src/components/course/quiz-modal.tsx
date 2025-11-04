@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -11,96 +11,36 @@ import {
   DialogFooter
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { generateQuizFromTranscript } from '@/ai/flows/generate-quiz-from-transcript';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { Rocket } from 'lucide-react';
-import { generateVideoSummary } from '@/ai/flows/generate-video-summary';
+import { Rocket, RefreshCcw } from 'lucide-react';
 
-type QuizModalProps = {
-  transcript: string;
-  onClose: () => void;
-  onQuizComplete: (score: number) => void;
-};
-
-interface QuizQuestion {
+export interface QuizQuestion {
   question: string;
   options: string[];
   answer: string;
 }
 
-const parseQuiz = (quizText: string): QuizQuestion[] => {
-    if (!quizText) return [];
-
-    const questions: QuizQuestion[] = [];
-    const questionBlocks = quizText.split(/\n(?=\d+\.)/g).filter(s => s.trim());
-
-    questionBlocks.forEach(block => {
-        const lines = block.trim().split('\n').filter(line => line.trim() !== '');
-        if (lines.length < 3) return;
-
-        const questionLine = lines[0].replace(/^\d+\.\s*/, '').trim();
-        const answerLineIndex = lines.findIndex(line => line.toLowerCase().startsWith('answer:'));
-        
-        if (answerLineIndex === -1) return;
-
-        const answer = lines[answerLineIndex].replace(/.*Answer:\s*/i, '').trim();
-        const optionLines = lines.slice(1, answerLineIndex);
-        
-        const options = optionLines.map(line => line.replace(/^[A-D][\.\)]\s*/, '').trim());
-
-        if (questionLine && options.length > 0 && answer) {
-            questions.push({
-                question: questionLine,
-                options,
-                answer
-            });
-        }
-    });
-
-    return questions;
+type QuizModalProps = {
+  quiz: QuizQuestion[] | null;
+  isLoading: boolean;
+  onClose: () => void;
+  onQuizComplete: (score: number) => void;
+  onRegenerate: () => void;
 };
 
-
-export function QuizModal({ transcript, onClose, onQuizComplete }: QuizModalProps) {
-  const [quiz, setQuiz] = useState<QuizQuestion[] | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export function QuizModal({ quiz, isLoading, onClose, onQuizComplete, onRegenerate }: QuizModalProps) {
   const [answers, setAnswers] = useState<{[key: number]: string}>({});
   const [submitted, setSubmitted] = useState(false);
   const [score, setScore] = useState<number | null>(null);
 
+  // Reset state when quiz changes (e.g., for a new topic)
   useEffect(() => {
-    const fetchQuiz = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        
-        const summaryResult = await generateVideoSummary({ transcript });
-        const summary = summaryResult.summary;
-
-        if (!summary) {
-            throw new Error("Failed to generate summary for the quiz.");
-        }
-
-        const result = await generateQuizFromTranscript({ summary });
-        const parsedQuiz = parseQuiz(result.quiz);
-        
-        if (parsedQuiz.length === 0) {
-            throw new Error("Quiz parsing resulted in no questions. The AI might have returned an unexpected format. Please try again.");
-        }
-        setQuiz(parsedQuiz);
-      } catch (err: any) {
-        setError(err.message || 'Failed to generate or parse the quiz. Please try again.');
-        console.error(err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchQuiz();
-  }, [transcript]);
+    setAnswers({});
+    setSubmitted(false);
+    setScore(null);
+  }, [quiz]);
 
   const handleAnswerChange = (questionIndex: number, value: string) => {
     setAnswers(prev => ({...prev, [questionIndex]: value}));
@@ -110,7 +50,10 @@ export function QuizModal({ transcript, onClose, onQuizComplete }: QuizModalProp
     if(!quiz) return;
     let correctAnswers = 0;
     quiz.forEach((q, i) => {
-        if(answers[i] === q.answer) {
+        const selectedAnswer = answers[i];
+        // Handle cases where AI might add extra chars to options or answers
+        const isCorrect = selectedAnswer?.trim() === q.answer.trim();
+        if(isCorrect) {
             correctAnswers++;
         }
     });
@@ -122,22 +65,18 @@ export function QuizModal({ transcript, onClose, onQuizComplete }: QuizModalProp
   const renderContent = () => {
     if (isLoading) {
       return (
-        <div className="flex flex-col items-center justify-center space-y-4 p-8">
+        <div className="flex flex-col items-center justify-center space-y-4 p-8 min-h-[200px]">
             <Rocket className="h-12 w-12 animate-pulse text-primary" />
-            <p className="text-muted-foreground">Generating summary and quiz...</p>
+            <p className="text-muted-foreground">Generating your personalized quiz...</p>
         </div>
       );
-    }
-
-    if (error) {
-        return <p className="text-destructive p-4">{error}</p>;
     }
 
     if (submitted && score !== null) {
         return (
             <div className="p-8 text-center space-y-4">
                 <h2 className="text-2xl font-bold">Quiz Results</h2>
-                <p className="text-6xl font-bold" style={{color: score >= 75 ? 'hsl(var(--primary))' : 'hsl(var(--destructive))'}}>{score}%</p>
+                <p className={`text-6xl font-bold ${score >= 75 ? 'text-primary' : 'text-destructive'}`}>{score}%</p>
                 <p className="text-muted-foreground">You answered {Math.round(score / 100 * (quiz?.length || 0))} out of {quiz?.length} questions correctly.</p>
                 <Button onClick={() => onQuizComplete(score)}>
                     {score >= 75 ? "Continue to Next Topic" : "Close and Try Again"}
@@ -165,7 +104,15 @@ export function QuizModal({ transcript, onClose, onQuizComplete }: QuizModalProp
         </div>
       );
     }
-    return null;
+    
+    // This case handles if loading is false but quiz is null (e.g. an error occurred before modal opened)
+    return (
+        <div className="flex flex-col items-center justify-center space-y-4 p-8 min-h-[200px]">
+            <p className="text-destructive">Could not load the quiz.</p>
+            <p className="text-muted-foreground text-center">There was an issue generating the quiz. Please try again.</p>
+            <Button onClick={onClose}>Close</Button>
+        </div>
+    );
   }
 
   return (
@@ -178,9 +125,13 @@ export function QuizModal({ transcript, onClose, onQuizComplete }: QuizModalProp
         <ScrollArea className="max-h-[60vh] pr-4 p-1">
             {renderContent()}
         </ScrollArea>
-        {!submitted && !isLoading && !error && (
-            <DialogFooter>
-                <Button onClick={handleSubmit} disabled={!quiz || Object.keys(answers).length !== quiz?.length}>Submit Quiz</Button>
+        {!submitted && !isLoading && !!quiz && (
+            <DialogFooter className="justify-between">
+                <Button variant="ghost" onClick={onRegenerate}>
+                    <RefreshCcw className="mr-2 h-4 w-4" />
+                    Regenerate
+                </Button>
+                <Button onClick={handleSubmit} disabled={Object.keys(answers).length !== quiz?.length}>Submit Quiz</Button>
             </DialogFooter>
         )}
       </DialogContent>

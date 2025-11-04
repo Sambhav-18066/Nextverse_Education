@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useMemo, use } from 'react';
+import { useState, useMemo, use, useCallback } from 'react';
 import { notFound } from 'next/navigation';
 import { coursesData, type Topic } from '@/lib/courses-data';
 import { Button } from '@/components/ui/button';
-import { BrainCircuit, BookOpen, Check, Lock } from 'lucide-react';
+import { BrainCircuit, BookOpen, Check, Lock, RefreshCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { SummaryModal } from '@/components/course/summary-modal';
-import { QuizModal } from '@/components/course/quiz-modal';
+import { QuizModal, type QuizQuestion } from '@/components/course/quiz-modal';
+import { generateVideoSummary } from '@/ai/flows/generate-video-summary';
+import { generateQuizFromTranscript } from '@/ai/flows/generate-quiz-from-transcript';
 
 type TopicProgress = {
   [topicId: string]: {
@@ -15,6 +17,10 @@ type TopicProgress = {
     score: number | null;
   };
 };
+
+type CachedQuiz = {
+    [topicId: string]: QuizQuestion[] | null;
+}
 
 // The params object is a Promise, so we need to define the type for what it resolves to.
 type CoursePageParams = {
@@ -40,12 +46,86 @@ export default function CoursePage({ params }: { params: Promise<CoursePageParam
 
   const [showSummaryModal, setShowSummaryModal] = useState(false);
   const [showQuizModal, setShowQuizModal] = useState(false);
+  const [cachedQuizzes, setCachedQuizzes] = useState<CachedQuiz>({});
+  const [isQuizLoading, setIsQuizLoading] = useState(false);
 
   if (!course || !activeTopic) {
     return notFound();
   }
 
+  const parseQuiz = (quizText: string): QuizQuestion[] => {
+    if (!quizText) return [];
+
+    const questions: QuizQuestion[] = [];
+    const questionBlocks = quizText.split(/\n(?=\d+\.)/g).filter(s => s.trim());
+
+    questionBlocks.forEach(block => {
+        const lines = block.trim().split('\n').filter(line => line.trim() !== '');
+        if (lines.length < 3) return;
+
+        const questionLine = lines[0].replace(/^\d+\.\s*/, '').trim();
+        const answerLineIndex = lines.findIndex(line => line.toLowerCase().startsWith('answer:'));
+        
+        if (answerLineIndex === -1) return;
+
+        const answer = lines[answerLineIndex].replace(/.*Answer:\s*/i, '').trim();
+        const optionLines = lines.slice(1, answerLineIndex);
+        
+        const options = optionLines.map(line => line.replace(/^[A-D][\.\)]\s*/, '').trim());
+
+        if (questionLine && options.length > 0 && answer) {
+            questions.push({
+                question: questionLine,
+                options,
+                answer
+            });
+        }
+    });
+
+    return questions;
+  };
+
+  const handleGenerateQuiz = useCallback(async (forceRegenerate: boolean = false) => {
+    if (!activeTopic) return;
+    if (!forceRegenerate && cachedQuizzes[activeTopic.id]) {
+        setShowQuizModal(true);
+        return;
+    }
+
+    setIsQuizLoading(true);
+    setShowQuizModal(true); // Open modal to show loading state
+
+    try {
+      const summaryResult = await generateVideoSummary({ transcript: activeTopic.transcript });
+      const summary = summaryResult.summary;
+
+      if (!summary) {
+          throw new Error("Failed to generate summary for the quiz.");
+      }
+
+      const result = await generateQuizFromTranscript({ summary });
+      const parsedQuiz = parseQuiz(result.quiz);
+      
+      if (parsedQuiz.length === 0) {
+          throw new Error("Quiz parsing resulted in no questions. The AI might have returned an unexpected format. Please try again.");
+      }
+      setCachedQuizzes(prev => ({ ...prev, [activeTopic.id]: parsedQuiz }));
+    } catch (err: any) {
+        toast({
+            title: "Error Generating Quiz",
+            description: err.message || "An unknown error occurred.",
+            variant: "destructive"
+        })
+        setShowQuizModal(false);
+    } finally {
+        setIsQuizLoading(false);
+    }
+  }, [activeTopic, cachedQuizzes, toast]);
+
+
   const handleQuizComplete = (score: number) => {
+    if (!activeTopic) return;
+
     const newProgress = { ...topicProgress };
     newProgress[activeTopic.id].score = score;
     
@@ -95,7 +175,7 @@ export default function CoursePage({ params }: { params: Promise<CoursePageParam
             <Button onClick={() => setShowSummaryModal(true)}>
               <BookOpen className="mr-2 h-4 w-4" /> Generate Summary
             </Button>
-            <Button onClick={() => setShowQuizModal(true)}>
+            <Button onClick={() => handleGenerateQuiz()}>
               <BrainCircuit className="mr-2 h-4 w-4" /> Take Quiz
             </Button>
           </div>
@@ -151,9 +231,11 @@ export default function CoursePage({ params }: { params: Promise<CoursePageParam
       )}
       {showQuizModal && (
         <QuizModal
-          transcript={activeTopic.transcript}
+          quiz={cachedQuizzes[activeTopic.id] || null}
+          isLoading={isQuizLoading}
           onClose={() => setShowQuizModal(false)}
           onQuizComplete={handleQuizComplete}
+          onRegenerate={() => handleGenerateQuiz(true)}
         />
       )}
     </div>
