@@ -1,0 +1,264 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user in the NextVerse Education platform.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user."
+        },
+        "email": {
+          "type": "string",
+          "description": "User's email address.",
+          "format": "email"
+        },
+        "name": {
+          "type": "string",
+          "description": "User's full name."
+        },
+        "mobileNumber": {
+          "type": "string",
+          "description": "User's mobile phone number."
+        },
+        "emailVerified": {
+          "type": "boolean",
+          "description": "Indicates if the user has verified their email address."
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "name",
+        "mobileNumber",
+        "emailVerified"
+      ]
+    },
+    "Course": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Course",
+      "type": "object",
+      "description": "Represents a course offered on the platform.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the course."
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the course."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the course."
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "description"
+      ]
+    },
+    "Topic": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Topic",
+      "type": "object",
+      "description": "Represents a topic within a course.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the topic."
+        },
+        "courseId": {
+          "type": "string",
+          "description": "Reference to Course. (Relationship: Course 1:N Topic)"
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the topic."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the topic."
+        },
+        "youtubeVideoId": {
+          "type": "string",
+          "description": "The id of the youtube video."
+        }
+      },
+      "required": [
+        "id",
+        "courseId",
+        "title",
+        "description",
+        "youtubeVideoId"
+      ]
+    },
+    "Quiz": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Quiz",
+      "type": "object",
+      "description": "Represents a quiz for a specific topic.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the quiz."
+        },
+        "topicId": {
+          "type": "string",
+          "description": "Reference to Topic. (Relationship: Topic 1:1 Quiz)"
+        },
+        "questions": {
+          "type": "array",
+          "description": "The questions for the quiz.",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "topicId",
+        "questions"
+      ]
+    },
+    "UserCourseProgress": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserCourseProgress",
+      "type": "object",
+      "description": "Represents the progress of a user in a specific course.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user course progress."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N UserCourseProgress)"
+        },
+        "courseId": {
+          "type": "string",
+          "description": "Reference to Course. (Relationship: Course 1:N UserCourseProgress)"
+        },
+        "completedTopicIds": {
+          "type": "array",
+          "description": "References to Topics completed by the user in the course.",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "courseId",
+        "completedTopicIds"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profile information. Uses path-based ownership for private user data.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/courses/{courseId}",
+        "definition": {
+          "entityName": "Course",
+          "schema": {
+            "$ref": "#/backend/entities/Course"
+          },
+          "description": "Stores course information.  Publicly accessible data.",
+          "params": [
+            {
+              "name": "courseId",
+              "description": "The unique identifier of the course."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/courses/{courseId}/topics/{topicId}",
+        "definition": {
+          "entityName": "Topic",
+          "schema": {
+            "$ref": "#/backend/entities/Topic"
+          },
+          "description": "Stores topic information for a specific course. Uses hierarchical paths to represent the 1:N relationship between courses and topics. Publicly accessible data.",
+          "params": [
+            {
+              "name": "courseId",
+              "description": "The unique identifier of the course."
+            },
+            {
+              "name": "topicId",
+              "description": "The unique identifier of the topic."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/courses/{courseId}/topics/{topicId}/quiz",
+        "definition": {
+          "entityName": "Quiz",
+          "schema": {
+            "$ref": "#/backend/entities/Quiz"
+          },
+          "description": "Stores quiz information for a specific topic. Uses hierarchical paths to represent the 1:1 relationship between topics and quizzes. Publicly accessible data.",
+          "params": [
+            {
+              "name": "courseId",
+              "description": "The unique identifier of the course."
+            },
+            {
+              "name": "topicId",
+              "description": "The unique identifier of the topic."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/courseProgress/{userCourseProgressId}",
+        "definition": {
+          "entityName": "UserCourseProgress",
+          "schema": {
+            "$ref": "#/backend/entities/UserCourseProgress"
+          },
+          "description": "Stores user course progress information. Uses path-based ownership for private user data.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "userCourseProgressId",
+              "description": "The unique identifier of the user course progress."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to provide a secure, scalable, and easily maintainable data model for the NextVerse Education platform. The core principle is Authorization Independence, achieved through denormalization of authorization data, eliminating the need for `get()` calls in security rules and enabling atomic operations. Structural Segregation is employed to ensure that each collection has a homogeneous security posture, simplifying security rules. Access Modeling standardizes authorization patterns using path-based ownership and membership maps.\n\nAuthorization Independence (CRITICAL): The structure avoids hierarchical authorization dependencies.  For example, access to `topics` under a `course` does not require reading the `course` document itself to determine authorization. Instead, any relevant course-level authorization data (if needed) would be denormalized into the `topic` documents.\n\nQAPs (Rules are not Filters): The structure enables secure `list` operations by ensuring that security rules can be written to allow listing only the documents a user is authorized to access, without needing to filter the results based on document content.\n\nUsers own their data. Course and Topic data will be publicly available, and UserCourseProgress will be private."
+  }
+}
