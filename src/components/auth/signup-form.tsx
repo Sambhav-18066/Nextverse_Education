@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -61,7 +62,11 @@ export function SignupForm() {
       const user = userCredential.user;
 
       if (user) {
-        await sendEmailVerification(user);
+        const actionCodeSettings = {
+          url: `${window.location.origin}/login`,
+          handleCodeInApp: true,
+        };
+        await sendEmailVerification(user, actionCodeSettings);
         
         const userProfile = {
           id: user.uid,

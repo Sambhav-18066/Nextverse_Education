@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -34,7 +35,11 @@ export default function UnverifiedPage() {
         setIsSending(true);
         if (auth.currentUser) {
             try {
-                await sendEmailVerification(auth.currentUser);
+                const actionCodeSettings = {
+                    url: `${window.location.origin}/login`,
+                    handleCodeInApp: true,
+                };
+                await sendEmailVerification(auth.currentUser, actionCodeSettings);
                 toast({
                     title: "Verification Email Sent",
                     description: "Check your inbox for a new verification link.",
