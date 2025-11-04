@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import type { User } from "firebase/auth";
 import {
   Card,
@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth, useFirestore, useStorage } from "@/firebase";
+import { useAuth, useFirestore, useStorage, useDoc, useMemoFirebase } from "@/firebase";
 import {
   sendPasswordResetEmail,
   sendEmailVerification,
@@ -26,9 +26,19 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { Badge } from "@/components/ui/badge";
 import { Pencil } from "lucide-react";
+import { Skeleton } from "../ui/skeleton";
 
 interface ProfileFormProps {
   user: User;
+}
+
+interface UserProfile {
+    name: string;
+    email: string;
+    photoURL?: string;
+    mobileNumber: string;
+    emailVerified: boolean;
+    mobileNumberVerified: boolean;
 }
 
 export function ProfileForm({ user: initialUser }: ProfileFormProps) {
@@ -36,9 +46,12 @@ export function ProfileForm({ user: initialUser }: ProfileFormProps) {
   const firestore = useFirestore();
   const storage = useStorage();
   const { toast } = useToast();
-  const [user, setUser] = useState(initialUser);
+  
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const userDocRef = useMemoFirebase(() => doc(firestore, `users/${initialUser.uid}`), [firestore, initialUser.uid]);
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
 
   const getInitials = (name: string | null | undefined) => {
     if (!name) return "U";
@@ -50,9 +63,9 @@ export function ProfileForm({ user: initialUser }: ProfileFormProps) {
   };
 
   const handlePasswordReset = async () => {
-    if (user.email) {
+    if (userProfile?.email) {
       try {
-        await sendPasswordResetEmail(auth, user.email);
+        await sendPasswordResetEmail(auth, userProfile.email);
         toast({
           title: "Password Reset Email Sent",
           description:
@@ -70,7 +83,7 @@ export function ProfileForm({ user: initialUser }: ProfileFormProps) {
   };
 
   const handleEmailVerification = async () => {
-    if (auth.currentUser) {
+    if (auth.currentUser && !auth.currentUser.emailVerified) {
       try {
         await sendEmailVerification(auth.currentUser);
         toast({
@@ -112,8 +125,6 @@ export function ProfileForm({ user: initialUser }: ProfileFormProps) {
       const userDocRef = doc(firestore, `users/${auth.currentUser.uid}`);
       setDocumentNonBlocking(userDocRef, { photoURL }, { merge: true });
 
-      setUser({ ...user, photoURL });
-
       toast({
         title: "Avatar Updated",
         description: "Your new profile picture has been saved.",
@@ -129,13 +140,31 @@ export function ProfileForm({ user: initialUser }: ProfileFormProps) {
     }
   };
 
+  if (isProfileLoading) {
+      return (
+        <Card className="text-center">
+            <CardHeader>
+                <Skeleton className="w-40 h-40 rounded-full mx-auto" />
+                <Skeleton className="h-8 w-3/4 mx-auto mt-4" />
+                <Skeleton className="h-6 w-full mx-auto" />
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <Skeleton className="h-6 w-1/2 mx-auto" />
+                <Skeleton className="h-6 w-1/2 mx-auto" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+            </CardContent>
+        </Card>
+      )
+  }
+
   return (
     <Card className="text-center">
       <CardHeader>
         <div className="relative w-40 h-40 mx-auto group">
           <Avatar className="w-40 h-40 text-4xl">
-            <AvatarImage src={user.photoURL || ""} alt={user.displayName || "User"} />
-            <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
+            <AvatarImage src={userProfile?.photoURL || ""} alt={userProfile?.name || "User"} />
+            <AvatarFallback>{getInitials(userProfile?.name)}</AvatarFallback>
           </Avatar>
           <Button
             variant="ghost"
@@ -159,20 +188,29 @@ export function ProfileForm({ user: initialUser }: ProfileFormProps) {
           />
         </div>
 
-        <CardTitle className="mt-4">{user.displayName}</CardTitle>
-        <CardDescription>{user.email}</CardDescription>
+        <CardTitle className="mt-4">{userProfile?.name}</CardTitle>
+        <CardDescription>{userProfile?.email}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex items-center justify-center gap-2">
             <Label>Email Status:</Label>
-            {user.emailVerified ? (
+            {userProfile?.emailVerified ? (
+                <Badge variant="secondary" className="bg-green-500/20 text-green-300">Verified</Badge>
+            ) : (
+                <Badge variant="destructive">Unverified</Badge>
+            )}
+        </div>
+        
+        <div className="flex items-center justify-center gap-2">
+            <Label>Mobile Status:</Label>
+            {userProfile?.mobileNumberVerified ? (
                 <Badge variant="secondary" className="bg-green-500/20 text-green-300">Verified</Badge>
             ) : (
                 <Badge variant="destructive">Unverified</Badge>
             )}
         </div>
 
-        {!user.emailVerified && (
+        {!userProfile?.emailVerified && (
             <Button onClick={handleEmailVerification} variant="outline" className="w-full">
                 Resend Verification Email
             </Button>

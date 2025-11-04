@@ -74,6 +74,7 @@ export function SignupForm() {
           email: values.email,
           mobileNumber: values.mobileNumber,
           emailVerified: false,
+          mobileNumberVerified: false,
         };
 
         const userDocRef = doc(firestore, `users/${user.uid}`);
