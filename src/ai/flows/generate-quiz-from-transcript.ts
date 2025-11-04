@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -40,7 +41,7 @@ const prompt = ai.definePrompt({
   output: {schema: GenerateQuizFromTranscriptOutputSchema},
   prompt: `You are an expert in creating quizzes from video summaries.
 
-  Generate a multiple-choice quiz with 4 options (A, B, C, D) and a clear answer key based on the following summary.
+  Generate a multiple-choice quiz with exactly 5 questions. Each question should have 4 options (A, B, C, D) and a clear answer key.
   Provide the question, the options, and then the correct answer on a new line starting with "Answer:".
 
   Summary: {{{summary}}}
@@ -56,8 +57,8 @@ const generateQuizFromTranscriptFlow = ai.defineFlow(
   async input => {
     const quizPrompt = `You are an expert in creating quizzes from video summaries.
 
-    Generate a multiple-choice quiz with 4 options (A, B, C, D) and a clear answer key based on the following summary.
-    Provide the question, the options, and then the correct answer on a new line starting with "Answer:".
+    Generate a multiple-choice quiz with exactly 5 questions. Each question must have 4 options (A, B, C, D) and a clear answer key.
+    For each question, provide the question text, then the 4 options, and finally the correct answer on a new line starting with "Answer:".
   
     Summary: ${input.summary}
     `;
