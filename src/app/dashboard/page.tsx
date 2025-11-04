@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { CourseList } from "@/components/course/course-list";
 import { coursesData, type Course } from "@/lib/courses-data";
 import { Input } from "@/components/ui/input";
@@ -9,6 +10,11 @@ import { SearchIcon, BrainCircuit } from "lucide-react";
 import { enhanceSearch } from "@/ai/flows/enhance-search-with-ai";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
+import { useUser, useFirestore, useMemoFirebase } from "@/firebase";
+import { useDoc } from "@/firebase/firestore/use-doc";
+import { doc } from "firebase/firestore";
+import { Skeleton } from "@/components/ui/skeleton";
+
 
 const initialState: { courses: Course[] | null; enhancedQuery: string | null } = {
     courses: null,
@@ -25,9 +31,24 @@ function SearchButton() {
     )
 }
 
+interface UserProfile {
+  name: string;
+  // include other fields from your user profile if needed
+}
+
+
 export default function Dashboard() {
-  const [searchTerm, setSearchTerm] = useState("");
+  const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
+
+  const userDocRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return doc(firestore, `users/${user.uid}`);
+  }, [user, firestore]);
   
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
+
+
   const searchAction = async (prevState: typeof initialState, formData: FormData): Promise<typeof initialState> => {
     const query = formData.get("search") as string;
     if (!query) {
@@ -63,10 +84,21 @@ export default function Dashboard() {
 
   const displayedCourses = state.courses ?? coursesData;
   
+  const WelcomeMessage = () => {
+    if (isUserLoading || isProfileLoading) {
+        return <Skeleton className="h-12 w-96" />;
+    }
+    return (
+        <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
+            Welcome, {userProfile?.name || 'Learner'}!
+        </h1>
+    )
+  }
+
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="mb-12 space-y-4">
-        <h1 className="text-4xl md:text-5xl font-bold tracking-tight">Welcome, Learner!</h1>
+        <WelcomeMessage />
         <p className="text-lg text-muted-foreground">
           What new knowledge will you discover today?
         </p>
