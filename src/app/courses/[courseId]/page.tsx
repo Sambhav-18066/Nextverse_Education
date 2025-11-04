@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, use } from 'react';
 import { notFound } from 'next/navigation';
 import { coursesData, type Topic } from '@/lib/courses-data';
 import { Button } from '@/components/ui/button';
@@ -16,8 +16,14 @@ type TopicProgress = {
   };
 };
 
-export default function CoursePage({ params }: { params: { courseId: string } }) {
-  const course = useMemo(() => coursesData.find((c) => c.id === params.courseId), [params.courseId]);
+// The params object is a Promise, so we need to define the type for what it resolves to.
+type CoursePageParams = {
+  courseId: string;
+}
+
+export default function CoursePage({ params }: { params: Promise<CoursePageParams> }) {
+  const { courseId } = use(params);
+  const course = useMemo(() => coursesData.find((c) => c.id === courseId), [courseId]);
   const { toast } = useToast();
 
   const [activeTopic, setActiveTopic] = useState<Topic | null>(course?.topics[0] ?? null);
