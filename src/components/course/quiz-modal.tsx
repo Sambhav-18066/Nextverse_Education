@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -30,47 +31,44 @@ interface QuizQuestion {
 
 const parseQuiz = (quizText: string): QuizQuestion[] => {
   if (!quizText) return [];
-
+  
   const questions: QuizQuestion[] = [];
-  // Split by common question delimiters
-  const questionBlocks = quizText.split(/\n?(?:Q\d+:|Question:|\d+\.)/).filter(b => b.trim() !== '');
+  const questionBlocks = quizText.split(/Q\d+:|Question \d+:|\n\d+\./).filter(s => s.trim().length > 10);
 
-  for (const block of questionBlocks) {
-    const lines = block.trim().split('\n');
-    let question = '';
-    const options: string[] = [];
+  questionBlocks.forEach(block => {
+    const lines = block.trim().split('\n').filter(line => line.trim() !== '');
+    if (lines.length < 3) return;
+
+    const question = lines[0].trim();
     let answer = '';
+    const options: string[] = [];
 
-    const questionLine = lines.shift()?.trim();
-    if (!questionLine) continue;
-    question = questionLine;
-
-    // Find the answer line and extract it
-    const answerIndex = lines.findIndex(line => line.toLowerCase().startsWith('answer:'));
-    if (answerIndex !== -1) {
-      answer = lines.splice(answerIndex, 1)[0].replace(/Answer:\s*[A-D]?\)\s*/i, '').trim();
+    const answerLineIndex = lines.findIndex(line => line.toLowerCase().includes('answer:'));
+    if (answerLineIndex !== -1) {
+      answer = lines[answerLineIndex].replace(/.*Answer:\s*/i, '').replace(/[A-D]\)\s/i, '').trim();
+      lines.splice(answerLineIndex, 1);
+    } else {
+      return; // No answer found for this block
     }
 
-    // The rest of the lines are options
-    lines.forEach(line => {
-      const trimmedLine = line.trim();
-      if (trimmedLine) {
-        // Remove option prefixes like A), B), 1. etc.
-        options.push(trimmedLine.replace(/^[A-Z]\)\s*|^[a-z]\)\s*|^\d+\.\s*/, '').trim());
+    lines.slice(1).forEach(line => {
+      if (line.match(/^[A-D]\)/i)) {
+        options.push(line.replace(/^[A-D]\)\s*/i, '').trim());
       }
     });
 
-    if (question && options.length > 1 && answer) {
-        // Make sure the answer is one of the options
-        const matchingAnswer = options.find(opt => opt.toLowerCase() === answer.toLowerCase());
-        if (matchingAnswer) {
-             questions.push({ question, options, answer: matchingAnswer });
-        } else if (options.some(opt => answer.toLowerCase().includes(opt.toLowerCase()))) {
-            const foundAnswer = options.find(opt => answer.toLowerCase().includes(opt.toLowerCase()))!
-            questions.push({ question, options, answer: foundAnswer });
-        }
+    if (question && options.length >= 2 && answer) {
+      // Find the full option text that matches the answer key
+      const correctAnswer = options.find(opt => opt.toLowerCase().startsWith(answer.toLowerCase()));
+      if (correctAnswer) {
+        questions.push({
+          question,
+          options,
+          answer: correctAnswer
+        });
+      }
     }
-  }
+  });
 
   return questions;
 };
