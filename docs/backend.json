@@ -41,7 +41,8 @@
         "email",
         "name",
         "mobileNumber",
-        "emailVerified"
+        "emailVerified",
+        "mobileNumberVerified"
       ]
     },
     "Course": {
@@ -171,6 +172,12 @@
       "password",
       "anonymous"
     ]
+  },
+  "storage": {
+    "/avatars/{userId}/{fileName}": {
+      "description": "Stores user profile avatars. Path-based ownership ensures users can only write to their own avatar directory.",
+      "contentType": "image/*"
+    }
   },
   "firestore": {
     "structure": [
