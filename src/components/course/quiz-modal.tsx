@@ -29,44 +29,50 @@ interface QuizQuestion {
 }
 
 const parseQuiz = (quizText: string): QuizQuestion[] => {
-  try {
-    const sections = quizText.split('Question:').slice(1);
-    return sections.map(section => {
-      const questionMatch = section.match(/^(.*?)Options:/s);
-      const optionsMatch = section.match(/Options:(.*?)Answer:/s);
-      const answerMatch = section.match(/Answer:(.*)$/s);
+  if (!quizText) return [];
 
-      if (!questionMatch || !optionsMatch || !answerMatch) {
-          throw new Error('Invalid quiz format for primary parser');
+  const questions: QuizQuestion[] = [];
+  // Split by common question delimiters
+  const questionBlocks = quizText.split(/\n?(?:Q\d+:|Question:|\d+\.)/).filter(b => b.trim() !== '');
+
+  for (const block of questionBlocks) {
+    const lines = block.trim().split('\n');
+    let question = '';
+    const options: string[] = [];
+    let answer = '';
+
+    const questionLine = lines.shift()?.trim();
+    if (!questionLine) continue;
+    question = questionLine;
+
+    // Find the answer line and extract it
+    const answerIndex = lines.findIndex(line => line.toLowerCase().startsWith('answer:'));
+    if (answerIndex !== -1) {
+      answer = lines.splice(answerIndex, 1)[0].replace(/Answer:\s*[A-D]?\)\s*/i, '').trim();
+    }
+
+    // The rest of the lines are options
+    lines.forEach(line => {
+      const trimmedLine = line.trim();
+      if (trimmedLine) {
+        // Remove option prefixes like A), B), 1. etc.
+        options.push(trimmedLine.replace(/^[A-Z]\)\s*|^[a-z]\)\s*|^\d+\.\s*/, '').trim());
       }
-
-      const question = questionMatch[1].trim();
-      const options = optionsMatch[1].trim().split('\n').map(opt => opt.replace(/^[A-D]\)\s*/, '').trim());
-      const answer = answerMatch[1].replace(/^[A-D]\)\s*/, '').trim();
-
-      return { question, options, answer };
     });
-  } catch (error) {
-    console.error("Failed to parse quiz with primary parser, trying fallback:", error);
-    try {
-        const simpleSections = quizText.split('\n\n');
-        return simpleSections.map(s => {
-            const lines = s.split('\n');
-            const question = lines[0].replace(/Question:\s*/, '').trim();
-            const options = lines.slice(1, -1).map(o => o.replace(/^[A-D]\)\s*/, '').trim());
-            const answerLine = lines[lines.length - 1];
-            const answer = answerLine.replace(/Answer:\s*/, '').replace(/^[A-D]\)\s*/, '').trim();
-            
-            if (!question || options.length < 2 || !answer) {
-              return null;
-            }
-            return { question, options, answer };
-        }).filter((q): q is QuizQuestion => q !== null);
-    } catch(e) {
-        console.error("Fallback parser also failed", e);
-        return [];
+
+    if (question && options.length > 1 && answer) {
+        // Make sure the answer is one of the options
+        const matchingAnswer = options.find(opt => opt.toLowerCase() === answer.toLowerCase());
+        if (matchingAnswer) {
+             questions.push({ question, options, answer: matchingAnswer });
+        } else if (options.some(opt => answer.toLowerCase().includes(opt.toLowerCase()))) {
+            const foundAnswer = options.find(opt => answer.toLowerCase().includes(opt.toLowerCase()))!
+            questions.push({ question, options, answer: foundAnswer });
+        }
     }
   }
+
+  return questions;
 };
 
 
@@ -82,6 +88,7 @@ export function QuizModal({ transcript, onClose, onQuizComplete }: QuizModalProp
     const fetchQuiz = async () => {
       try {
         setIsLoading(true);
+        setError(null);
         const result = await generateQuizFromTranscript({ transcript });
         const parsedQuiz = parseQuiz(result.quiz);
         if (parsedQuiz.length === 0) {
