@@ -10,8 +10,6 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import { geminiPro } from '@genkit-ai/google-genai';
-
 
 const GenerateQuizFromTranscriptInputSchema = z.object({
   summary: z
@@ -78,7 +76,7 @@ const generateQuizFromTranscriptFlow = ai.defineFlow(
     } catch(e) {
         console.warn('Primary model (gemini-1.5-flash) failed, trying failsafe model (gemini-pro)...', e);
         const {output} = await ai.generate({
-            model: geminiPro,
+            model: 'googleai/gemini-pro',
             prompt: quizPrompt,
             output: {
                 schema: GenerateQuizFromTranscriptOutputSchema,

@@ -14,7 +14,6 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import { geminiPro } from '@genkit-ai/google-genai';
 
 const GenerateVideoSummaryInputSchema = z.object({
   transcript: z
@@ -80,7 +79,7 @@ ${input.transcript}`,
       console.warn('Primary model (gemini-1.5-flash) failed, trying failsafe model (gemini-pro)...', error);
       // Failsafe: attempt with the secondary model
       const {output} = await ai.generate({
-          model: geminiPro,
+          model: 'googleai/gemini-pro',
           prompt: `Generate a detailed and comprehensive summary of the following YouTube video transcript. Make sure to highlight any particularly important points or "serious notes" that are critical for understanding the topic.
 
 Transcript:
