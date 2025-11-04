@@ -35,19 +35,6 @@ export async function generateQuizFromTranscript(
   return generateQuizFromTranscriptFlow(input);
 }
 
-const prompt = ai.definePrompt({
-  name: 'generateQuizFromTranscriptPrompt',
-  input: {schema: GenerateQuizFromTranscriptInputSchema},
-  output: {schema: GenerateQuizFromTranscriptOutputSchema},
-  prompt: `You are an expert in creating quizzes from video summaries.
-
-  Generate a multiple-choice quiz with exactly 5 questions. Each question should have 4 options (A, B, C, D) and a clear answer key.
-  Provide the question, the options, and then the correct answer on a new line starting with "Answer:".
-
-  Summary: {{{summary}}}
-  `,
-});
-
 const generateQuizFromTranscriptFlow = ai.defineFlow(
   {
     name: 'generateQuizFromTranscriptFlow',
@@ -57,9 +44,21 @@ const generateQuizFromTranscriptFlow = ai.defineFlow(
   async input => {
     const quizPrompt = `You are an expert in creating quizzes from video summaries.
 
-    Generate a multiple-choice quiz with exactly 5 questions. Each question must have 4 options (A, B, C, D) and a clear answer key.
-    For each question, provide the question text, then the 4 options, and finally the correct answer on a new line starting with "Answer:".
+    Generate a multiple-choice quiz with exactly 5 questions.
+    Each question must have 4 options, labeled A, B, C, and D.
+    After each question's options, you MUST provide the correct answer on a new line.
+    
+    The format for the answer MUST BE EXACTLY: "Answer: [Correct Option Text]". Do not use the letter.
+
+    Here is an example of the required format for one question:
+    1. What is the main principle of wave-particle duality?
+    A. Particles are always waves.
+    B. Particles can exhibit properties of both waves and particles.
+    C. Waves are always particles.
+    D. It is not a real principle.
+    Answer: Particles can exhibit properties of both waves and particles.
   
+    Now, generate the full 5-question quiz based on this summary:
     Summary: ${input.summary}
     `;
 
@@ -71,7 +70,7 @@ const generateQuizFromTranscriptFlow = ai.defineFlow(
                 schema: GenerateQuizFromTranscriptOutputSchema,
             },
             config: {
-              temperature: 0.5
+              temperature: 0.3
             }
         });
         return output!;
