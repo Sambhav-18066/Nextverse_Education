@@ -55,26 +55,27 @@ export default function CoursePage({ params }: { params: Promise<CoursePageParam
 
   const parseQuiz = (quizText: string): QuizQuestion[] => {
     if (!quizText) return [];
-
+  
     const questions: QuizQuestion[] = [];
     // Split by lines that start with a number and a period, like "1.", "2.", etc.
     const questionBlocks = quizText.split(/\n?(?=\d+\.\s)/).filter(s => s.trim());
-
+  
     questionBlocks.forEach(block => {
         const lines = block.trim().split('\n').filter(line => line.trim() !== '');
         if (lines.length < 3) return;
-
+  
         const questionLine = lines[0].replace(/^\d+\.\s*/, '').trim();
-        const answerLineIndex = lines.findIndex(line => line.toLowerCase().startsWith('answer:'));
+        // Find the answer line, being flexible about its format
+        const answerLineIndex = lines.findIndex(line => line.trim().toLowerCase().startsWith('answer:'));
         
         if (answerLineIndex === -1) return;
-
+  
         const answer = lines[answerLineIndex].replace(/.*Answer:\s*/i, '').trim();
         // Options are lines between the question and the answer
-        const optionLines = lines.slice(1, answerLineLineIndex);
+        const optionLines = lines.slice(1, answerLineIndex);
         
         const options = optionLines.map(line => line.replace(/^[A-D][\.\)]\s*/, '').trim()).filter(opt => opt);
-
+  
         if (questionLine && options.length > 0 && answer) {
             questions.push({
                 question: questionLine,
@@ -83,7 +84,7 @@ export default function CoursePage({ params }: { params: Promise<CoursePageParam
             });
         }
     });
-
+  
     return questions;
   };
 
@@ -115,12 +116,12 @@ export default function CoursePage({ params }: { params: Promise<CoursePageParam
     } catch (err: any) {
         toast({
             title: "Error Generating Quiz",
-            description: err.message || "An unknown error occurred. Regenerating...",
+            description: err.message || "An unknown error occurred. Please try again.",
             variant: "destructive"
         })
         // Clear the failed quiz and retry
         setCachedQuizzes(prev => ({ ...prev, [activeTopic.id]: null }));
-        await handleGenerateQuiz(true);
+        setShowQuizModal(false);
     } finally {
         setIsQuizLoading(false);
     }
@@ -149,22 +150,14 @@ export default function CoursePage({ params }: { params: Promise<CoursePageParam
         });
       }
       setShowQuizModal(false);
-    } else if (score < 20) {
+    } else {
         toast({
           title: "Let's Try That Again!",
-          description: "Your score was below 20%. A new quiz is being generated for you.",
+          description: "You need a 75% to pass. A new quiz is being generated for you.",
           variant: "destructive"
         });
         // Don't close the modal, just trigger a regeneration
         handleGenerateQuiz(true);
-    }
-    else {
-        toast({
-          title: "Keep Trying! 💪",
-          description: "You need a score of 75% or higher to unlock the next topic.",
-          variant: "destructive"
-        });
-        setShowQuizModal(false);
     }
 
     setTopicProgress(newProgress);
