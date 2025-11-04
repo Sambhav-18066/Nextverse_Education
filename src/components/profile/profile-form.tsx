@@ -85,7 +85,11 @@ export function ProfileForm({ user: initialUser }: ProfileFormProps) {
   const handleEmailVerification = async () => {
     if (auth.currentUser && !auth.currentUser.emailVerified) {
       try {
-        await sendEmailVerification(auth.currentUser);
+        const actionCodeSettings = {
+          url: `${window.location.origin}/profile`,
+          handleCodeInApp: true,
+        };
+        await sendEmailVerification(auth.currentUser, actionCodeSettings);
         toast({
           title: "Verification Email Sent",
           description: "Check your inbox to verify your email address.",
@@ -169,7 +173,7 @@ export function ProfileForm({ user: initialUser }: ProfileFormProps) {
           <Button
             variant="ghost"
             size="icon"
-            className="absolute bottom-2 right-2 bg-background/80 rounded-full h-10 w-10 opacity-0 group-hover:opacity-100 transition-opacity"
+            className="absolute bottom-2 right-2 bg-background/80 rounded-full h-10 w-10 hover:bg-background transition-opacity"
             onClick={handleAvatarClick}
             disabled={isUploading}
           >
