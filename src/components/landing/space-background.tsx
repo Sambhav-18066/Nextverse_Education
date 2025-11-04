@@ -60,8 +60,8 @@ const SpaceBackground = () => {
   }, []);
 
   return (
-    <div className="absolute inset-0 z-0">
-      <div className="absolute inset-0 bg-background" />
+    <div className="fixed inset-0 -z-10">
+      <div className="absolute inset-0 bg-gradient-to-tr from-[#2a074b] via-[#1f0e38] to-black" />
       {stars.map((star, index) => (
         <Star key={index} style={star} />
       ))}

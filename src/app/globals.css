@@ -63,11 +63,7 @@
     @apply border-border;
   }
   body {
-    @apply text-foreground;
-    background-color: hsl(var(--background));
-    background-image: radial-gradient(ellipse at bottom, hsl(var(--accent) / 0.2), transparent 70%), 
-                      radial-gradient(ellipse at top, hsl(255 47% 64% / 0.15), transparent 80%);
-    background-repeat: no-repeat;
+    @apply text-foreground bg-background;
   }
 }
 
@@ -93,7 +89,7 @@
   }
   
   .glass-morphism {
-    @apply bg-card backdrop-blur-xl border border-white/10;
+    @apply bg-card/60 backdrop-blur-xl border border-white/10;
   }
 }
 

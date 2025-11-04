@@ -164,7 +164,7 @@ export default function CoursePage({ params }: { params: Promise<CoursePageParam
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-[calc(100vh-theme(height.14))]">
+    <div className="flex-1 flex flex-col md:flex-row h-full">
       <main className="flex-1 p-4 md:p-8 overflow-y-auto">
         <div className="aspect-video bg-card rounded-lg mb-6 overflow-hidden">
           <iframe
