@@ -35,7 +35,7 @@ export function CourseCard({ course, onClick, action = 'explore' }: CourseCardPr
           <CardDescription className="line-clamp-2">{course.description}</CardDescription>
         </CardHeader>
         <CardContent>
-            <Button variant="outline" className="w-full">
+            <Button variant="outline" className="w-full neon-glow">
                 {action === 'explore' ? 'Explore' : 'Start Learning'}
             </Button>
         </CardContent>

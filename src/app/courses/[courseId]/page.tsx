@@ -179,10 +179,10 @@ export default function CoursePage({ params }: { params: Promise<CoursePageParam
         <div className="space-y-4">
           <h1 className="text-3xl font-bold">{activeTopic.title}</h1>
           <div className="flex flex-col sm:flex-row gap-4">
-            <Button onClick={() => setShowSummaryModal(true)}>
+            <Button onClick={() => setShowSummaryModal(true)} className="neon-glow">
               <BookOpen className="mr-2 h-4 w-4" /> Generate Summary
             </Button>
-            <Button onClick={() => handleGenerateQuiz(false)}>
+            <Button onClick={() => handleGenerateQuiz(false)} className="neon-glow">
               <BrainCircuit className="mr-2 h-4 w-4" /> Take Quiz
             </Button>
           </div>

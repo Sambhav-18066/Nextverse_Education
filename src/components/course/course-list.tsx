@@ -99,7 +99,7 @@ export function CourseList({ courses }: CourseListProps) {
                 <motion.h2 className="text-3xl font-bold mb-4">{selectedCourse.title}</motion.h2>
                 <motion.p className="text-muted-foreground mb-6">{selectedCourse.description}</motion.p>
                 <Link href={`/courses/${selectedCourse.id}`}>
-                    <Button size="lg" className="w-full md:w-auto">Start Learning</Button>
+                    <Button size="lg" className="w-full md:w-auto neon-glow">Start Learning</Button>
                 </Link>
               </motion.div>
             </motion.div>
