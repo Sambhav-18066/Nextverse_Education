@@ -14,6 +14,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import {defineModel, geminiPro, gemini15Flash} from '@genkit-ai/google-genai';
 
 const GenerateVideoSummaryInputSchema = z.object({
   transcript: z
@@ -26,7 +27,9 @@ export type GenerateVideoSummaryInput = z.infer<
 >;
 
 const GenerateVideoSummaryOutputSchema = z.object({
-  summary: z.string().describe('A concise summary of the video transcript.'),
+  summary: z
+    .string()
+    .describe('A detailed and comprehensive summary of the video transcript, highlighting key points.'),
 });
 
 export type GenerateVideoSummaryOutput = z.infer<
@@ -39,11 +42,28 @@ export async function generateVideoSummary(
   return generateVideoSummaryFlow(input);
 }
 
+const gemini25Flash = defineModel(
+    {
+        name: 'googleai/gemini-2.5-flash',
+        config: {
+            temperature: 0.5,
+        }
+    },
+    async (input) => {
+        // This is a placeholder for any custom logic you might want to add.
+        // For now, it just passes through to the gemini15Flash model.
+        return gemini15Flash(input);
+    }
+)
+
 const generateVideoSummaryPrompt = ai.definePrompt({
   name: 'generateVideoSummaryPrompt',
   input: {schema: GenerateVideoSummaryInputSchema},
   output: {schema: GenerateVideoSummaryOutputSchema},
-  prompt: `Summarize the following YouTube video transcript:\n\n{{transcript}}`,
+  prompt: `Generate a detailed and comprehensive summary of the following YouTube video transcript. Make sure to highlight any particularly important points or "serious notes" that are critical for understanding the topic.
+
+Transcript:
+{{{transcript}}}`,
 });
 
 const generateVideoSummaryFlow = ai.defineFlow(
@@ -53,7 +73,33 @@ const generateVideoSummaryFlow = ai.defineFlow(
     outputSchema: GenerateVideoSummaryOutputSchema,
   },
   async input => {
-    const {output} = await generateVideoSummaryPrompt(input);
-    return output!;
+    try {
+      // First attempt with the primary model
+      const {output} = await ai.generate({
+        model: 'googleai/gemini-2.5-flash',
+        prompt: `Generate a detailed and comprehensive summary of the following YouTube video transcript. Make sure to highlight any particularly important points or "serious notes" that are critical for understanding the topic.
+
+Transcript:
+{{{transcript}}}`,
+        output: {
+          schema: GenerateVideoSummaryOutputSchema,
+        }
+      });
+      return output!;
+    } catch (error) {
+      console.warn('Primary model (gemini-2.5-flash) failed, trying failsafe model (gemini-pro)...', error);
+      // Failsafe: attempt with the secondary model
+      const {output} = await ai.generate({
+          model: geminiPro,
+          prompt: `Generate a detailed and comprehensive summary of the following YouTube video transcript. Make sure to highlight any particularly important points or "serious notes" that are critical for understanding the topic.
+
+Transcript:
+{{{transcript}}}`,
+          output: {
+              schema: GenerateVideoSummaryOutputSchema,
+          }
+      });
+      return output!;
+    }
   }
 );

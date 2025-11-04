@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Rocket } from 'lucide-react';
+import { generateVideoSummary } from '@/ai/flows/generate-video-summary';
 
 type QuizModalProps = {
   transcript: string;
@@ -33,33 +34,35 @@ const parseQuiz = (quizText: string): QuizQuestion[] => {
   if (!quizText) return [];
   
   const questions: QuizQuestion[] = [];
-  const questionBlocks = quizText.split(/Q\d+:|Question \d+:|\n\d+\./).filter(s => s.trim().length > 10);
+  const questionBlocks = quizText.split(/Q\d+:|Question \d+:|\n\d+\.|\*\*/).filter(s => s.trim().length > 10 && s.includes("Answer:"));
 
   questionBlocks.forEach(block => {
     const lines = block.trim().split('\n').filter(line => line.trim() !== '');
     if (lines.length < 3) return;
 
-    const question = lines[0].trim();
+    let question = '';
     let answer = '';
     const options: string[] = [];
 
-    const answerLineIndex = lines.findIndex(line => line.toLowerCase().includes('answer:'));
+    const answerLineIndex = lines.findIndex(line => line.toLowerCase().startsWith('answer:'));
     if (answerLineIndex !== -1) {
       answer = lines[answerLineIndex].replace(/.*Answer:\s*/i, '').replace(/[A-D]\)\s/i, '').trim();
       lines.splice(answerLineIndex, 1);
     } else {
-      return; // No answer found for this block
+      return; 
     }
-
+    
+    question = lines[0].replace(/^\d+\.\s*/, '').trim();
     lines.slice(1).forEach(line => {
-      if (line.match(/^[A-D]\)/i)) {
-        options.push(line.replace(/^[A-D]\)\s*/i, '').trim());
-      }
+       const optionMatch = line.match(/^[A-D]\)\s*(.*)/i);
+        if (optionMatch) {
+            options.push(optionMatch[1].trim());
+        }
     });
 
     if (question && options.length >= 2 && answer) {
-      // Find the full option text that matches the answer key
-      const correctAnswer = options.find(opt => opt.toLowerCase().startsWith(answer.toLowerCase()));
+      const correctAnswer = options.find(opt => opt.toLowerCase().startsWith(answer.toLowerCase()) || answer.toLowerCase().includes(opt.toLowerCase()));
+
       if (correctAnswer) {
         questions.push({
           question,
@@ -87,14 +90,23 @@ export function QuizModal({ transcript, onClose, onQuizComplete }: QuizModalProp
       try {
         setIsLoading(true);
         setError(null);
-        const result = await generateQuizFromTranscript({ transcript });
+        
+        const summaryResult = await generateVideoSummary({ transcript });
+        const summary = summaryResult.summary;
+
+        if (!summary) {
+            throw new Error("Failed to generate summary for the quiz.");
+        }
+
+        const result = await generateQuizFromTranscript({ summary });
         const parsedQuiz = parseQuiz(result.quiz);
+        
         if (parsedQuiz.length === 0) {
             throw new Error("Quiz parsing resulted in no questions.");
         }
         setQuiz(parsedQuiz);
-      } catch (err) {
-        setError('Failed to generate or parse the quiz. The AI might be busy or the format is unexpected. Please try again.');
+      } catch (err: any) {
+        setError(err.message || 'Failed to generate or parse the quiz. Please try again.');
         console.error(err);
       } finally {
         setIsLoading(false);
@@ -126,7 +138,7 @@ export function QuizModal({ transcript, onClose, onQuizComplete }: QuizModalProp
       return (
         <div className="flex flex-col items-center justify-center space-y-4 p-8">
             <Rocket className="h-12 w-12 animate-pulse text-primary" />
-            <p className="text-muted-foreground">Generating quiz...</p>
+            <p className="text-muted-foreground">Generating summary and quiz...</p>
         </div>
       );
     }
