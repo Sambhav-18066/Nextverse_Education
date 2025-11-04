@@ -35,7 +35,7 @@ export function QuizModal({ quiz, isLoading, onClose, onQuizComplete, onRegenera
   const [submitted, setSubmitted] = useState(false);
   const [score, setScore] = useState<number | null>(null);
 
-  // Reset state when quiz changes (e.g., for a new topic)
+  // Reset state when quiz changes (e.g., for a new topic or regeneration)
   useEffect(() => {
     setAnswers({});
     setSubmitted(false);
@@ -52,7 +52,7 @@ export function QuizModal({ quiz, isLoading, onClose, onQuizComplete, onRegenera
     quiz.forEach((q, i) => {
         const selectedAnswer = answers[i];
         // Handle cases where AI might add extra chars to options or answers
-        const isCorrect = selectedAnswer?.trim() === q.answer.trim();
+        const isCorrect = selectedAnswer?.trim().toLowerCase() === q.answer.trim().toLowerCase();
         if(isCorrect) {
             correctAnswers++;
         }
@@ -60,6 +60,12 @@ export function QuizModal({ quiz, isLoading, onClose, onQuizComplete, onRegenera
     const finalScore = Math.round((correctAnswers / quiz.length) * 100);
     setScore(finalScore);
     setSubmitted(true);
+  }
+  
+  const handleCompletionAcknowledged = () => {
+      if (score !== null) {
+          onQuizComplete(score);
+      }
   }
 
   const renderContent = () => {
@@ -78,8 +84,8 @@ export function QuizModal({ quiz, isLoading, onClose, onQuizComplete, onRegenera
                 <h2 className="text-2xl font-bold">Quiz Results</h2>
                 <p className={`text-6xl font-bold ${score >= 75 ? 'text-primary' : 'text-destructive'}`}>{score}%</p>
                 <p className="text-muted-foreground">You answered {Math.round(score / 100 * (quiz?.length || 0))} out of {quiz?.length} questions correctly.</p>
-                <Button onClick={() => onQuizComplete(score)}>
-                    {score >= 75 ? "Continue to Next Topic" : "Close and Try Again"}
+                <Button onClick={handleCompletionAcknowledged}>
+                    {score >= 75 ? "Continue to Next Topic" : (score < 20 ? "Try New Questions" : "Close and Try Again")}
                 </Button>
             </div>
         )
@@ -115,6 +121,8 @@ export function QuizModal({ quiz, isLoading, onClose, onQuizComplete, onRegenera
     );
   }
 
+  const allQuestionsAnswered = quiz && Object.keys(answers).length === quiz.length;
+
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-2xl">
@@ -126,12 +134,12 @@ export function QuizModal({ quiz, isLoading, onClose, onQuizComplete, onRegenera
             {renderContent()}
         </ScrollArea>
         {!submitted && !isLoading && !!quiz && (
-            <DialogFooter className="justify-between">
+            <DialogFooter className="justify-between sm:justify-between">
                 <Button variant="ghost" onClick={onRegenerate}>
                     <RefreshCcw className="mr-2 h-4 w-4" />
                     Regenerate
                 </Button>
-                <Button onClick={handleSubmit} disabled={Object.keys(answers).length !== quiz?.length}>Submit Quiz</Button>
+                <Button onClick={handleSubmit} disabled={!allQuestionsAnswered}>Submit Quiz</Button>
             </DialogFooter>
         )}
       </DialogContent>

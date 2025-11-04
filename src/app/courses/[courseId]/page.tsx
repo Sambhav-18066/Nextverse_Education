@@ -57,7 +57,8 @@ export default function CoursePage({ params }: { params: Promise<CoursePageParam
     if (!quizText) return [];
 
     const questions: QuizQuestion[] = [];
-    const questionBlocks = quizText.split(/\n(?=\d+\.)/g).filter(s => s.trim());
+    // Split by lines that start with a number and a period, like "1.", "2.", etc.
+    const questionBlocks = quizText.split(/\n?(?=\d+\.\s)/).filter(s => s.trim());
 
     questionBlocks.forEach(block => {
         const lines = block.trim().split('\n').filter(line => line.trim() !== '');
@@ -69,9 +70,10 @@ export default function CoursePage({ params }: { params: Promise<CoursePageParam
         if (answerLineIndex === -1) return;
 
         const answer = lines[answerLineIndex].replace(/.*Answer:\s*/i, '').trim();
-        const optionLines = lines.slice(1, answerLineIndex);
+        // Options are lines between the question and the answer
+        const optionLines = lines.slice(1, answerLineLineIndex);
         
-        const options = optionLines.map(line => line.replace(/^[A-D][\.\)]\s*/, '').trim());
+        const options = optionLines.map(line => line.replace(/^[A-D][\.\)]\s*/, '').trim()).filter(opt => opt);
 
         if (questionLine && options.length > 0 && answer) {
             questions.push({
@@ -107,16 +109,18 @@ export default function CoursePage({ params }: { params: Promise<CoursePageParam
       const parsedQuiz = parseQuiz(result.quiz);
       
       if (parsedQuiz.length === 0) {
-          throw new Error("Quiz parsing resulted in no questions. The AI might have returned an unexpected format. Please try again.");
+          throw new Error("Quiz parsing resulted in no questions. The AI might have returned an unexpected format. A new quiz will be generated.");
       }
       setCachedQuizzes(prev => ({ ...prev, [activeTopic.id]: parsedQuiz }));
     } catch (err: any) {
         toast({
             title: "Error Generating Quiz",
-            description: err.message || "An unknown error occurred.",
+            description: err.message || "An unknown error occurred. Regenerating...",
             variant: "destructive"
         })
-        setShowQuizModal(false);
+        // Clear the failed quiz and retry
+        setCachedQuizzes(prev => ({ ...prev, [activeTopic.id]: null }));
+        await handleGenerateQuiz(true);
     } finally {
         setIsQuizLoading(false);
     }
@@ -144,16 +148,26 @@ export default function CoursePage({ params }: { params: Promise<CoursePageParam
           description: "You've mastered all topics in this course.",
         });
       }
-    } else {
+      setShowQuizModal(false);
+    } else if (score < 20) {
+        toast({
+          title: "Let's Try That Again!",
+          description: "Your score was below 20%. A new quiz is being generated for you.",
+          variant: "destructive"
+        });
+        // Don't close the modal, just trigger a regeneration
+        handleGenerateQuiz(true);
+    }
+    else {
         toast({
           title: "Keep Trying! 💪",
           description: "You need a score of 75% or higher to unlock the next topic.",
           variant: "destructive"
         });
+        setShowQuizModal(false);
     }
 
     setTopicProgress(newProgress);
-    setShowQuizModal(false);
   };
 
   return (
@@ -175,7 +189,7 @@ export default function CoursePage({ params }: { params: Promise<CoursePageParam
             <Button onClick={() => setShowSummaryModal(true)}>
               <BookOpen className="mr-2 h-4 w-4" /> Generate Summary
             </Button>
-            <Button onClick={() => handleGenerateQuiz()}>
+            <Button onClick={() => handleGenerateQuiz(false)}>
               <BrainCircuit className="mr-2 h-4 w-4" /> Take Quiz
             </Button>
           </div>
