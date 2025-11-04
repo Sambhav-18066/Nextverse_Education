@@ -37,7 +37,7 @@ const parseQuiz = (quizText: string): QuizQuestion[] => {
       const answerMatch = section.match(/Answer:(.*)$/s);
 
       if (!questionMatch || !optionsMatch || !answerMatch) {
-          throw new Error('Invalid quiz format');
+          throw new Error('Invalid quiz format for primary parser');
       }
 
       const question = questionMatch[1].trim();
@@ -47,16 +47,25 @@ const parseQuiz = (quizText: string): QuizQuestion[] => {
       return { question, options, answer };
     });
   } catch (error) {
-    console.error("Failed to parse quiz:", error);
-    // Fallback for a simpler format if the above fails
-    const simpleSections = quizText.split('\n\n');
-    return simpleSections.map(s => {
-        const lines = s.split('\n');
-        const question = lines[0].replace('Question: ','');
-        const options = lines.slice(1, -1).map(o => o.substring(3));
-        const answer = lines[lines.length - 1].replace('Answer: ','');
-        return { question, options, answer };
-    }).filter(q => q.question && q.options.length > 1 && q.answer);
+    console.error("Failed to parse quiz with primary parser, trying fallback:", error);
+    try {
+        const simpleSections = quizText.split('\n\n');
+        return simpleSections.map(s => {
+            const lines = s.split('\n');
+            const question = lines[0].replace(/Question:\s*/, '').trim();
+            const options = lines.slice(1, -1).map(o => o.replace(/^[A-D]\)\s*/, '').trim());
+            const answerLine = lines[lines.length - 1];
+            const answer = answerLine.replace(/Answer:\s*/, '').replace(/^[A-D]\)\s*/, '').trim();
+            
+            if (!question || options.length < 2 || !answer) {
+              return null;
+            }
+            return { question, options, answer };
+        }).filter((q): q is QuizQuestion => q !== null);
+    } catch(e) {
+        console.error("Fallback parser also failed", e);
+        return [];
+    }
   }
 };
 
@@ -75,9 +84,12 @@ export function QuizModal({ transcript, onClose, onQuizComplete }: QuizModalProp
         setIsLoading(true);
         const result = await generateQuizFromTranscript({ transcript });
         const parsedQuiz = parseQuiz(result.quiz);
+        if (parsedQuiz.length === 0) {
+            throw new Error("Quiz parsing resulted in no questions.");
+        }
         setQuiz(parsedQuiz);
       } catch (err) {
-        setError('Failed to generate quiz. The AI might be busy. Please try again.');
+        setError('Failed to generate or parse the quiz. The AI might be busy or the format is unexpected. Please try again.');
         console.error(err);
       } finally {
         setIsLoading(false);
@@ -165,7 +177,7 @@ export function QuizModal({ transcript, onClose, onQuizComplete }: QuizModalProp
         </ScrollArea>
         {!submitted && !isLoading && !error && (
             <DialogFooter>
-                <Button onClick={handleSubmit} disabled={Object.keys(answers).length !== quiz?.length}>Submit Quiz</Button>
+                <Button onClick={handleSubmit} disabled={!quiz || Object.keys(answers).length !== quiz?.length}>Submit Quiz</Button>
             </DialogFooter>
         )}
       </DialogContent>
