@@ -21,6 +21,11 @@
       "imageHint": "pyramids ruins"
     },
     {
+      "id": "electronics-fundamentals",
+      "imageUrl": "https://images.unsplash.com/photo-1697577418970-95d99b5a55cf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxjaXJjdWl0JTIwYm9hcmR8ZW58MHx8fHwxNzYyMTk0NTQyfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "circuit board"
+    },
+    {
       "id": "cosmic-voyages-1",
       "imageUrl": "https://images.unsplash.com/photo-1754851357071-e22af991e590?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxwbGFuZXQlMjBzdXJmYWNlfGVufDB8fHx8MTc2MjE1MDIxMHww&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "planet surface"

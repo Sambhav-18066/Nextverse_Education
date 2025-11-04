@@ -109,4 +109,55 @@ export const coursesData: Course[] = [
       },
     ],
   },
+  {
+    id: 'electronics-fundamentals',
+    title: 'Electronics Fundamentals',
+    description: 'Learn the basics of electronics, from simple components like diodes and capacitors to more complex topics like modulation and RFID.',
+    imageId: 'electronics-fundamentals',
+    detailImageIds: [],
+    topics: [
+      {
+        id: 'ef-t1',
+        title: 'Modulation',
+        videoId: 'mHvV_Tv8HDQ',
+        transcript: 'Modulation is the process of varying one or more properties of a periodic waveform, called the carrier signal, with a modulating signal that typically contains information to be transmitted.',
+      },
+      {
+        id: 'ef-t2',
+        title: 'Multiplexing',
+        videoId: 'WXof7bg_Zys',
+        transcript: 'In telecommunications and computer networks, multiplexing is a method by which multiple analog or digital signals are combined into one signal over a shared medium.',
+      },
+      {
+        id: 'ef-t3',
+        title: 'RFID',
+        videoId: 'Ukfpq71BoMo',
+        transcript: 'Radio-Frequency Identification (RFID) uses electromagnetic fields to automatically identify and track tags attached to objects. The tags contain electronically stored information.',
+      },
+      {
+        id: 'ef-t4',
+        title: 'Capacitor',
+        videoId: 'X4EUwTwZ110',
+        transcript: 'A capacitor is a device that stores electrical energy in an electric field. It is a passive electronic component with two terminals.',
+      },
+      {
+        id: 'ef-t5',
+        title: 'Transistor',
+        videoId: 'YtM_MnM0qT4',
+        transcript: 'A transistor is a semiconductor device used to amplify or switch electronic signals and electrical power. It is composed of semiconductor material usually with at least three terminals for connection to an external circuit.',
+      },
+      {
+        id: 'ef-t6',
+        title: 'Rectifier',
+        videoId: 'n9FxHA7pl6o',
+        transcript: 'A rectifier is an electrical device that converts alternating current (AC), which periodically reverses direction, to direct current (DC), which flows in only one direction.',
+      },
+      {
+        id: 'ef-t7',
+        title: 'Diode',
+        videoId: 'Fwj_d3uO5g8',
+        transcript: 'A diode is a two-terminal electronic component that conducts current primarily in one direction; it has low resistance in one direction, and high resistance in the other.',
+      },
+    ],
+  },
 ];
