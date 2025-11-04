@@ -76,10 +76,10 @@ ${input.transcript}`,
       });
       return output!;
     } catch (error) {
-      console.warn('Primary model (gemini-1.5-flash) failed, trying failsafe model (gemini-pro)...', error);
+      console.warn('Primary model (gemini-1.5-flash) failed, trying failsafe model (gemini-1.5-pro)...', error);
       // Failsafe: attempt with the secondary model
       const {output} = await ai.generate({
-          model: 'googleai/gemini-pro',
+          model: 'googleai/gemini-1.5-pro',
           prompt: `Generate a detailed and comprehensive summary of the following YouTube video transcript. Make sure to highlight any particularly important points or "serious notes" that are critical for understanding the topic.
 
 Transcript:
