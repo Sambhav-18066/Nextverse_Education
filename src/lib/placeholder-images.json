@@ -1,3 +1,44 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "cosmic-voyages",
+      "imageUrl": "https://images.unsplash.com/photo-1640522321132-093fa9e2e309?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8Z2FsYXh5JTIwbmVidWxhfGVufDB8fHx8MTc2MjE0NDk0M3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "galaxy nebula"
+    },
+    {
+      "id": "quantum-physics",
+      "imageUrl": "https://images.unsplash.com/photo-1706644488821-da9c962ce2ab?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxhdG9tcyUyMHBhcnRpY2xlc3xlbnwwfHx8fDE3NjIyMzczODV8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "atoms particles"
+    },
+    {
+      "id": "ai-ml",
+      "imageUrl": "https://images.unsplash.com/photo-1677212004257-103cfa6b59d0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxyb2JvdCUyMGJyYWlufGVufDB8fHx8MTc2MjE1NDQ0OXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "robot brain"
+    },
+    {
+      "id": "ancient-civilizations",
+      "imageUrl": "https://images.unsplash.com/photo-1647220501326-b6b09fdb70f7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxweXJhbWlkcyUyMHJ1aW5zfGVufDB8fHx8MTc2MjIzNzM4NXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "pyramids ruins"
+    },
+    {
+      "id": "cosmic-voyages-1",
+      "imageUrl": "https://images.unsplash.com/photo-1754851357071-e22af991e590?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxwbGFuZXQlMjBzdXJmYWNlfGVufDB8fHx8MTc2MjE1MDIxMHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "planet surface"
+    },
+    {
+      "id": "cosmic-voyages-2",
+      "imageUrl": "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxzcGFjZSUyMHN0YXRpb258ZW58MHx8fHwxNzYyMjM3Mzg1fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "space station"
+    },
+    {
+      "id": "quantum-physics-1",
+      "imageUrl": "https://images.unsplash.com/photo-1761645502922-fe3dde9f7341?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8YWJzdHJhY3QlMjBlbmVyZ3l8ZW58MHx8fHwxNzYyMTUyMzMyfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "abstract energy"
+    },
+    {
+      "id": "quantum-physics-2",
+      "imageUrl": "https://images.unsplash.com/photo-1603115021589-9039f24472e1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxsaWdodCUyMHNwZWN0cnVtfGVufDB8fHx8MTc2MjIzNzM4NXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "light spectrum"
+    }
+  ]
 }
