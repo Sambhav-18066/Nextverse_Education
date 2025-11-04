@@ -31,49 +31,68 @@ interface QuizQuestion {
 }
 
 const parseQuiz = (quizText: string): QuizQuestion[] => {
-  if (!quizText) return [];
-  
-  const questions: QuizQuestion[] = [];
-  const questionBlocks = quizText.split(/Q\d+:|Question \d+:|\n\d+\.|\*\*/).filter(s => s.trim().length > 10 && s.includes("Answer:"));
+    if (!quizText) return [];
 
-  questionBlocks.forEach(block => {
-    const lines = block.trim().split('\n').filter(line => line.trim() !== '');
-    if (lines.length < 3) return;
+    const questions: QuizQuestion[] = [];
+    // Split by common question delimiters (Q1:, 1., Question 1:, etc.)
+    const questionBlocks = quizText.split(/(?=Q\d:|Question \d:|\n\d+\.|\n\*\*Q|\n\*Q|\n\n)/).filter(s => s.trim());
 
-    let question = '';
-    let answer = '';
-    const options: string[] = [];
+    questionBlocks.forEach(block => {
+        const lines = block.trim().split('\n').filter(line => line.trim() !== '');
+        if (lines.length < 3) return;
 
-    const answerLineIndex = lines.findIndex(line => line.toLowerCase().startsWith('answer:'));
-    if (answerLineIndex !== -1) {
-      answer = lines[answerLineIndex].replace(/.*Answer:\s*/i, '').replace(/[A-D]\)\s/i, '').trim();
-      lines.splice(answerLineIndex, 1);
-    } else {
-      return; 
-    }
-    
-    question = lines[0].replace(/^\d+\.\s*/, '').trim();
-    lines.slice(1).forEach(line => {
-       const optionMatch = line.match(/^[A-D]\)\s*(.*)/i);
-        if (optionMatch) {
-            options.push(optionMatch[1].trim());
+        let question = '';
+        let answer = '';
+        const options: string[] = [];
+
+        // Find the answer line and extract the answer text
+        const answerLineIndex = lines.findIndex(line => line.toLowerCase().startsWith('answer:'));
+        if (answerLineIndex === -1) return; // No answer found for this block
+
+        const answerLine = lines[answerLineIndex];
+        answer = answerLine.replace(/.*Answer:\s*/i, '').trim();
+        
+        // The question is usually the first line
+        question = lines[0].replace(/^Q\d+:|^Question \d+:|^\d+\.|\*\*/g, '').trim();
+
+        // Options are lines between the question and the answer
+        lines.slice(1, answerLineIndex).forEach(line => {
+            const optionMatch = line.match(/^[A-Da-d][\).] \s*(.*)/);
+            if (optionMatch) {
+                options.push(optionMatch[1].trim());
+            } else if (line.trim()) { // Fallback for lines without A/B/C/D
+                options.push(line.trim());
+            }
+        });
+
+        if (question && options.length >= 2 && answer) {
+            // Find the full option text that matches the answer key
+            const answerLetter = answer.match(/^[A-Da-d]/)?.[0].toUpperCase();
+            let correctAnswer = '';
+
+            if (answerLetter) {
+                 const optionIndex = answerLetter.charCodeAt(0) - 'A'.charCodeAt(0);
+                 if (options[optionIndex]) {
+                    correctAnswer = options[optionIndex];
+                 }
+            }
+            
+            // Fallback if letter matching fails, try to find by text
+            if (!correctAnswer) {
+                correctAnswer = options.find(opt => answer.includes(opt)) || '';
+            }
+
+            if (correctAnswer) {
+                questions.push({
+                    question,
+                    options,
+                    answer: correctAnswer
+                });
+            }
         }
     });
 
-    if (question && options.length >= 2 && answer) {
-      const correctAnswer = options.find(opt => opt.toLowerCase().startsWith(answer.toLowerCase()) || answer.toLowerCase().includes(opt.toLowerCase()));
-
-      if (correctAnswer) {
-        questions.push({
-          question,
-          options,
-          answer: correctAnswer
-        });
-      }
-    }
-  });
-
-  return questions;
+    return questions;
 };
 
 
@@ -201,3 +220,5 @@ export function QuizModal({ transcript, onClose, onQuizComplete }: QuizModalProp
     </Dialog>
   );
 }
+
+  
