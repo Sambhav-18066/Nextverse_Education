@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -8,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { SearchIcon, BrainCircuit } from "lucide-react";
 import { enhanceSearch } from "@/ai/flows/enhance-search-with-ai";
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 
 const initialState: { courses: Course[] | null; enhancedQuery: string | null } = {
     courses: null,
@@ -59,7 +59,7 @@ export default function Dashboard() {
     }
   }
 
-  const [state, formAction] = useFormState(searchAction, initialState);
+  const [state, formAction] = useActionState(searchAction, initialState);
 
   const displayedCourses = state.courses ?? coursesData;
   
